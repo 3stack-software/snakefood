@@ -81,7 +81,14 @@ def compare_expect(exp_stdout, exp_stderr, *args, **kw):
         if filterdir is not None:
             from_, to_ = filterdir
             expected = re.sub(re.escape(from_), to_, expected)
+        # Fixup path to python executable for repeatable test results
+        text = re.sub(r"'[^']+/lib/python2\.7([^']*)'", "'/usr/lib/python2.7\g<1>'", text)
+        # Fixup standard module names like `datetime.so`
+        text = re.sub(r"/lib-dynload', '([^']+)\.so'", "', '\g<1>'", text)
 
+        # Ensure equal ordering
+        text = "\n".join(sorted(text.splitlines()))
+        expected = "\n".join(sorted(expected.splitlines()))
         try:
             assert text == expected, ("Unexpected text: \n%s\n != \n%s\n" % (text, expected))
         except AssertionError:
