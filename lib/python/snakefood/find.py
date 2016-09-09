@@ -339,11 +339,13 @@ def find_dotted_module(modname, rname, parentdir, level):
     # Try relative import, then global imports.
     fn = find_dotted(names, parentdir)
     if not fn:
-        try:
-            fn = module_cache[modname]
-        except KeyError:
-            fn = find_dotted(names)
-            module_cache[modname] = fn
+        if level == 0:
+            # Only try global imports __iff not relative__
+            try:
+                fn = module_cache[modname]
+            except KeyError:
+                fn = find_dotted(names)
+                module_cache[modname] = fn
 
         if not fn:
             errors.append((ERROR_IMPORT, modname))
