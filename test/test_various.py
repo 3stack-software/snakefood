@@ -9,12 +9,14 @@ from testsupport import *
 
 
 _files = [
+    'project/sub1/sub11/relative_from.py',
     'simple/stdlib.py',
     'simple/invalid.py',
     'simple/notfound.py',
     'project/foo_import.py',
     'project/foo_from.py',
-    'project/sub1/sub11/relative_from.py',
+    'project/sub3/relative.py',
+    'project/sub3/datetime.py',
     ]
 
 def test_various():

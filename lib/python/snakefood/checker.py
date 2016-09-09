@@ -59,7 +59,7 @@ def main():
         ast, lines = parse_python_source(fn)
         if ast is None:
             continue
-        found_imports = get_ast_imports(ast)
+        found_imports, _ = get_ast_imports(ast)
 
         # Check for duplicate remote names imported.
         if opts.do_dups:

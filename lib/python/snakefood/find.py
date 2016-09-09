@@ -37,7 +37,7 @@ def find_dependencies(fn, verbose, process_pragmas,
     ast, _ = parse_python_source(fn)
     if ast is None:
         return [], file_errors
-    found_imports = get_ast_imports(ast)
+    found_imports, future_imports = get_ast_imports(ast)
     if found_imports is None:
         return [], file_errors
 
@@ -52,6 +52,7 @@ def find_dependencies(fn, verbose, process_pragmas,
     if output_code:
         source_lines = open(fn, 'rU').read().splitlines()
 
+    absolute_import = 'absolute_import' in future_imports
     files = []
     assert not isdir(fn)
     dn = dirname(fn)
@@ -70,8 +71,7 @@ def find_dependencies(fn, verbose, process_pragmas,
         if sig in seenset:
             continue
         seenset.add(sig)
-
-        modfile, errors = find_dotted_module(mod, rname, dn, level)
+        modfile, errors = find_dotted_module(mod, rname, dn, level, absolute_import)
         if errors:
             file_errors.extend(errors)
             for err, name in errors:
@@ -96,7 +96,7 @@ def find_imports(fn, verbose, ignores):
     if ast is None:
         raise StopIteration
 
-    found_imports = get_ast_imports(ast)
+    found_imports, future_imports = get_ast_imports(ast)
     if found_imports is None:
         raise StopIteration
 
@@ -140,6 +140,7 @@ class ImportVisitor(object):
     def __init__(self):
         self.modules = []
         self.recent = []
+        self.future = set()
 
     def visitImport(self, node):
         self.accept_imports()
@@ -150,7 +151,9 @@ class ImportVisitor(object):
         self.accept_imports()
         modname = node.modname
         if modname == '__future__':
-            return # Ignore these.
+            for name, as_ in node.names:
+                self.future.add(name)
+            return
         for name, as_ in node.names:
             if name == '*':
                 # We really don't know...
@@ -204,7 +207,7 @@ class ImportVisitor(object):
 
     def finalize(self):
         self.accept_imports()
-        return self.modules
+        return self.modules, self.future
 
 
 def check_duplicate_imports(found_imports):
@@ -294,8 +297,8 @@ def get_ast_imports(ast):
     assert ast is not None
     vis = ImportVisitor()
     compiler.walk(ast, vis, ImportWalker(vis))
-    found_imports = vis.finalize()
-    return found_imports
+    found_imports, future_imports = vis.finalize()
+    return found_imports, future_imports
 
 
 # **WARNING** This is where all the evil lies.  Risk and peril.  Watch out.
@@ -312,7 +315,7 @@ builtin_module_names = sys.builtin_module_names + exceptions
 
 module_cache = {}
 
-def find_dotted_module(modname, rname, parentdir, level):
+def find_dotted_module(modname, rname, parentdir, level, absolute_import):
     """
     A version of find_module that supports dotted module names (packages).  This
     function returns the filename of the module if found, otherwise returns
@@ -327,6 +330,8 @@ def find_dotted_module(modname, rname, parentdir, level):
 
     'level' is the level of a relative import (i.e. the number of leading dots).
     If 0, the import is absolute.
+
+    'absolute_import' use semantics defined in https://www.python.org/dev/peps/pep-0328/
     """
     # Check for builtins.
     if modname in builtin_module_names:
@@ -343,10 +348,15 @@ def find_dotted_module(modname, rname, parentdir, level):
                 (ERROR_SYMBOL, '.'*level + rname)
             ]
         return fn, []
-
-    fn = _import_relative(modname, parentdir, level)
-    if not fn and level == 0:
-        fn = _import_module(modname)
+    if absolute_import:
+        if level == 0:
+            fn = _import_module(modname)
+        else:
+            fn = _import_relative(modname, parentdir, level)
+    else:
+        fn = _import_relative(modname, parentdir, level)
+        if not fn and level == 0:
+            fn = _import_module(modname)
 
     if not fn:
         return None, [

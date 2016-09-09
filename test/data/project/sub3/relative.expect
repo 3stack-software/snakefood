@@ -1,0 +1,3 @@
+(('ROOT', 'project/sub3/relative.py'), (None, None))
+(('ROOT', 'project/sub3/relative.py'), ('ROOT', 'project/sub2/test2.py'))
+(('ROOT', 'project/sub3/relative.py'), ('ROOT', 'project/sub3/datetime.py'))

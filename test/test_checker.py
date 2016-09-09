@@ -34,7 +34,7 @@ _names_tests = (
 
 def test_checker_functional():
     for source, expected in _import_tests:
-        found = visit_source(source, ImportVisitor)
+        found, _ = visit_source(source, ImportVisitor)
         actual = [x[2] for x in found if x[2] is not None]
         assert actual == expected, (actual, expected)
 
@@ -48,7 +48,7 @@ def test_checker_functional():
 
 def test_checker_expected():
     checkdir = join(data, 'checker')
-    pytocheck = [join(checkdir, fn) for fn in 
+    pytocheck = [join(checkdir, fn) for fn in
                  os.listdir(checkdir) if fn.endswith('.py')]
 
     for fn in pytocheck:
