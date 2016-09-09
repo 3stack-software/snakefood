@@ -11,20 +11,11 @@ from subprocess import *
 
 __all__ = ('data', 'find_dirs', 'run_sfood', 'compare_expect')
 
-
-
-def find_hg_root(start=__file__):
-    "Find the root of a Mercurial repository."
-    pdn, dn = None, start
-    while not exists(join(dn, '.hg')) and pdn != dn:
-        pdn, dn = dn, dirname(dn)
-    return dn
-
-# Root of the mercurial repo.
-hgroot = find_hg_root()
+# Root of the repo.
+_root = realpath(join(dirname(__file__), '..'))
 
 # Executables directory and executables.
-bindir = join(hgroot, 'bin')
+bindir = join(_root, 'bin')
 
 # Root location where the data files are to be found.
 data = join(dirname(__file__), 'data')
