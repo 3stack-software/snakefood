@@ -6,3 +6,20 @@ install:
 script:
 - make test
 - make sdist bdist
+deploy:
+  - provider: releases
+    api_key:
+      secure: cZSFdC9dj5I5H5yP7Wboo0e0ivZZyKnp8MFR99HNTi6sNBsv+sUqimeic8RGgYzcsScKhmyCIzETTViwNQAjWYLf5cmCUeto5XJ4lCnveSyMbqxHBR068323gH18axmNCfoxDd9qvZObYaYx+zeVuqbzOxKMknLuAHLqp0TKFZaJYK/lwhEeZJbV1Ebk9+n664fRZvkzg8z1TVUhClUF3Psjr8qGqHuLHGD7zOkEj5BCuv3UniSpRKsFX2KVYS3AVU7rvfHm0fWsXPKZ0vA2+JyIU8aDaSqUrd/PZTGodS/uvKAew8RiZ1jEUhNpBKp98HdkZlP2OTfRPha0stswF1OW+NsY0snmwmpIn7R4EKV62oBmjpkRUToVtx2vuRLOQU9Sn9r+Z1ifmYxQERdfylSmGMxIswLB8lqTB5A3JkEz/q9ilxyXcMglfHXcvFoFF+yBdlG+qukhIyOFWxfF97NoGTYGbA1A2OSIolSOd21pbnucth0XXkFSOMxw3HanLt/jAKyKedFpClYNoRlLL9870Sgb7unX/PFtCHmdHCAg9limzZ+5iwZvr431e9JrwfT+D9LVjwuiVHdOWqn25EJrGeV6yHA5V1se/FmaUNqeb0CrR1qYCrOf9cpgcLk2iJwXz2daO8xuY8jjQc045dIaM+CU/LlLV34Ah5HnA8I=
+    file: dist/*
+    file_glob: true
+    skip_cleanup: true
+    on:
+      tags: true
+      repo: 3stack-software/snakefood
+  - provider: script
+    script: bash dist_gemfury.sh
+    on:
+      tags: true
+cache:
+  directories:
+    - $HOME/.cache/pip
