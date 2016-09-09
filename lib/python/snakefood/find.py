@@ -364,7 +364,7 @@ def find_dotted_module(modname, rname, parentdir, level, absolute_import):
         ]
 
     # If this is a from-form, try the target symbol as a module.
-    if rname:
+    if rname and _supports_submodules(fn):
         fn2 = _import_relative(rname, dirname(fn), 1)
         if not fn2:
             return fn, [
@@ -372,6 +372,11 @@ def find_dotted_module(modname, rname, parentdir, level, absolute_import):
             ]
         fn = fn2
     return fn, []
+
+
+def _supports_submodules(fn):
+    # Only folders and __init__.py's can have submodules
+    return isdir(fn) or fn.endswith('/__init__.py')
 
 
 def _import_module(modname):
