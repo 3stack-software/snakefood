@@ -332,35 +332,54 @@ def find_dotted_module(modname, rname, parentdir, level):
     if modname in builtin_module_names:
         return join(libpath, modname), None
 
-    errors = []
-    names = modname.split('.')
-    for i in range(level - 1):
-        parentdir = dirname(parentdir)
-    # Try relative import, then global imports.
-    fn = find_dotted(names, parentdir)
-    if not fn:
-        if level == 0:
-            # Only try global imports __iff not relative__
-            try:
-                fn = module_cache[modname]
-            except KeyError:
-                fn = find_dotted(names)
-                module_cache[modname] = fn
-
+    if modname == '':
+        # Check for "from ... import xyz"
+        # However, xyz could be a symbol in ./__init__.py
+        assert rname is not None
+        assert level > 0
+        fn = _import_relative(rname, parentdir, level)
         if not fn:
-            errors.append((ERROR_IMPORT, modname))
-            return None, errors
+            return parentdir, [
+                (ERROR_SYMBOL, '.'*level + rname)
+            ]
+        return fn, []
+
+    fn = _import_relative(modname, parentdir, level)
+    if not fn and level == 0:
+        fn = _import_module(modname)
+
+    if not fn:
+        return None, [
+            (ERROR_IMPORT, modname)
+        ]
 
     # If this is a from-form, try the target symbol as a module.
     if rname:
-        fn2 = find_dotted([rname], dirname(fn))
-        if fn2:
-            fn = fn2
-        else:
-            errors.append((ERROR_SYMBOL, '.'.join((modname, rname))))
-            # Pass-thru and return the filename of the parent, which was found.
+        fn2 = _import_relative(rname, dirname(fn), 1)
+        if not fn2:
+            return fn, [
+                (ERROR_SYMBOL, '.'.join((modname, rname)))
+            ]
+        fn = fn2
+    return fn, []
 
-    return fn, errors
+
+def _import_module(modname):
+    try:
+        return module_cache[modname]
+    except KeyError:
+        names = modname.split('.')
+        fn = find_dotted(names)
+        module_cache[modname] = fn
+        return fn
+
+
+def _import_relative(modname, parentdir, level):
+    for i in range(level - 1):
+        parentdir = dirname(parentdir)
+    names = modname.split('.')
+    return find_dotted(names, parentdir)
+
 
 try:
     from imp import ImpImporter
